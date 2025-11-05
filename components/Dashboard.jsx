@@ -4,6 +4,7 @@ import {
   View,
   ActivityIndicator,
   Text,
+  FlatList,
 } from "react-native";
 import Movie from "../components/Movie";
 import AddMovieFloatingButton from "../components/AddMovieFloatingButton";
@@ -14,9 +15,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import useFetch from "../hooks/useFetch";
 
 export default function Dashboard() {
-  const baseUrl = "http://localhost:3000"; // Cambiar a tu URL de json-server
+  const baseUrl = "https://nondigestive-shea-divertedly.ngrok-free.dev"; // Cambiar a tu URL de json-server
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [currentSegment, setCurrentSegment] = useState(0);
 
   // Obtener categorías
   const {
@@ -31,9 +33,11 @@ export default function Dashboard() {
     loading: loadingMovies,
     error: moviesError,
     reload: reloadMovies,
-  } = useFetch(`${baseUrl}/movies`, {
-    category: selectedCategory,
-  });
+  } = useFetch(
+    selectedCategory
+      ? `${baseUrl}/movies?category=${selectedCategory}`
+      : `${baseUrl}/movies`
+  );
 
   if (loadingMovies || loadingCategories) {
     return (
@@ -51,32 +55,66 @@ export default function Dashboard() {
     );
   }
 
-  const firstMovie = (movies && movies[0]) ||
-    (data.movies && data.movies[0]) || {
-      title: "No movies",
-      poster: null,
-      description: "",
-    };
+  const firstMovie = movies?.[0] || {
+    title: "No movies available",
+    poster: null,
+    description: "Please add some movies",
+    duration: 0,
+    rating: 0,
+  };
+
+  const renderMovie = ({ item }) => (
+    <Movie
+      title={item.title}
+      poster={item.poster}
+      description={item.description}
+      duration={item.duration}
+      rating={item.rating}
+    />
+  );
+
+  const renderContent = () => {
+    if (currentSegment === 0) {
+      return (
+        <View style={styles.listContainer}>
+          <FlatList
+            data={movies}
+            renderItem={renderMovie}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContent}
+          />
+        </View>
+      );
+    } else {
+      // Por ahora solo mostramos la primera película
+      return (
+        <Movie
+          title={firstMovie.title}
+          poster={firstMovie.poster}
+          description={firstMovie.description}
+          duration={firstMovie.duration}
+          rating={firstMovie.rating}
+        />
+      );
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <SegmentControl
         segments={["All Movies", "Movies By Category"]}
-        selectedSegment={0}
+        selectedSegment={currentSegment}
         onSegmentSelect={(index) => {
+          setCurrentSegment(index);
           if (index === 1 && categories) {
             setSelectedCategory(categories[0]?.name); // Seleccionar primera categoría
           } else {
             setSelectedCategory(null); // Mostrar todas las películas
           }
         }}
-        style={{ width: Dimensions.get("window").width - 20 }}
+        style={styles.segmentControl}
       />
-      <Movie
-        title={firstMovie.title}
-        poster={firstMovie.poster}
-        description={firstMovie.description}
-      />
+      {renderContent()}
       <AddMovieFloatingButton
         style={{
           position: "absolute",
@@ -103,9 +141,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    alignItems: "center",
   },
   centered: {
     justifyContent: "center",
+    alignItems: "center",
+  },
+  segmentControl: {
+    width: Dimensions.get("window").width - 20,
+    alignSelf: "center",
+    marginVertical: 10,
+  },
+  listContainer: {
+    flex: 1,
+    width: "100%",
+  },
+  listContent: {
+    padding: 10,
   },
 });

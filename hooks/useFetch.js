@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 const useFetch = (url, params = {}) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = async () => {
     if (!url) return;
 
     setLoading(true);
@@ -18,17 +18,20 @@ const useFetch = (url, params = {}) => {
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
+      console.log("URL:", finalUrl);
+      console.log("Result:", result);
+
       setData(result);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [url, params]);
+  };
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [url, JSON.stringify(params)]); // Usar JSON.stringify para comparar objetos
 
   return { data, loading, error, reload: fetchData };
 };

@@ -27,11 +27,12 @@ export const getRatingStars = (rating) => {
  * @returns {string} - Star emoji string.
  */
 export const formatDuration = (minutes) => {
-  if (minutes < 60) {
-    return `${minutes}min`;
+  const totalMinutes = Number(minutes);
+  if (totalMinutes < 60) {
+    return `${totalMinutes}min`;
   } else {
-    let hours = minutes / 60;
-    let minutes = minutes % 60;
-    return `${hours}h ${minutes}min`;
+    let hours = Math.floor(totalMinutes / 60);
+    let rest = Math.floor(totalMinutes % 60);
+    return `${hours}h ${rest}min`;
   }
 };

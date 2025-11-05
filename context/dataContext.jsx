@@ -1,17 +1,24 @@
 // MyContext.js
 import { createContext, useContext } from "react";
+import useFetch from "../hooks/useFetch";
 
-export const dataContext = createContext("dataContext");
+export const DataContext = createContext(null);
 
-function App() {
-  const { dataMovies } = useFetch(
-    "https://nondigestive-shea-divertedly.ngrok-free.dev/movies"
+export function DataProvider({ children }) {
+  const { data: movies, loading: moviesLoading } = useFetch(
+    "http://localhost:3000/movies"
   );
-  const { dataCategories } = useFetch(
-    "https://nondigestive-shea-divertedly.ngrok-free.dev/categories"
+  const { data: categories, loading: categoriesLoading } = useFetch(
+    "http://localhost:3000/categories"
   );
-  <MyContext.Provider value={{ dataMovies, dataCategories }}>
-    <MyChildComponent />
-  </MyContext.Provider>;
+
+  const value = {
+    movies,
+    categories,
+    loading: moviesLoading || categoriesLoading,
+  };
+
+  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
-export const useDataContext = () => useContext(MyContext);
+
+export const useDataContext = () => useContext(DataContext);
