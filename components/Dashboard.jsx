@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   Text,
   FlatList,
+  ScrollView,
+  i,
 } from "react-native";
 import Movie from "../components/Movie";
 import AddMovieFloatingButton from "../components/AddMovieFloatingButton";
@@ -55,14 +57,6 @@ export default function Dashboard() {
     );
   }
 
-  const firstMovie = movies?.[0] || {
-    title: "No movies available",
-    poster: null,
-    description: "Please add some movies",
-    duration: 0,
-    rating: 0,
-  };
-
   const renderMovie = ({ item }) => (
     <Movie
       title={item.title}
@@ -73,29 +67,55 @@ export default function Dashboard() {
     />
   );
 
+  // 🔹 Render de las categorías y sus películas
+  const renderMoviesByCategory = () => {
+    return (
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {categories.map((category) => {
+          const filteredMovies = movies.filter(
+            (movie) => movie.category === category.name
+          );
+
+          return (
+            <View key={category.id} style={styles.categorySection}>
+              <Text style={styles.categoryTitle}>{category.name}</Text>
+
+              {filteredMovies.length > 0 ? (
+                <FlatList
+                  data={filteredMovies}
+                  renderItem={renderMovie}
+                  keyExtractor={(item) => item.id.toString()}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalList}
+                />
+              ) : (
+                <Text style={styles.noMoviesText}>
+                  No movies in this category
+                </Text>
+              )}
+            </View>
+          );
+        })}
+      </ScrollView>
+    );
+  };
+
+  // 🔹 Render de todas las películas sin filtro
+  const renderAllMovies = () => (
+    <FlatList
+      data={movies}
+      renderItem={renderMovie}
+      keyExtractor={(item) => item.id.toString()}
+      contentContainerStyle={styles.listContent}
+    />
+  );
+
   const renderContent = () => {
     if (currentSegment === 0) {
-      return (
-        <View style={styles.listContainer}>
-          <FlatList
-            data={movies}
-            renderItem={renderMovie}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.listContent}
-          />
-        </View>
-      );
-    } else {
-      // Por ahora solo mostramos la primera película
-      return (
-        <Movie
-          title={firstMovie.title}
-          poster={firstMovie.poster}
-          description={firstMovie.description}
-          duration={firstMovie.duration}
-          rating={firstMovie.rating}
-        />
-      );
+      return renderAllMovies();
+    } else if (currentSegment === 1) {
+      return renderMoviesByCategory();
     }
   };
 
@@ -106,32 +126,22 @@ export default function Dashboard() {
         selectedSegment={currentSegment}
         onSegmentSelect={(index) => {
           setCurrentSegment(index);
-          if (index === 1 && categories) {
-            setSelectedCategory(categories[0]?.name); // Seleccionar primera categoría
-          } else {
-            setSelectedCategory(null); // Mostrar todas las películas
-          }
+          if (index === 0) setSelectedCategory(null);
         }}
         style={styles.segmentControl}
       />
+
       {renderContent()}
+
       <AddMovieFloatingButton
-        style={{
-          position: "absolute",
-          bottom: 20,
-          right: 20,
-        }}
-        onPress={() => {
-          console.log("Add Movie Pressed");
-          setModalVisible(true);
-        }}
+        style={styles.fab}
+        onPress={() => setModalVisible(true)}
       />
+
       <AddMovieModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onSubmit={() => {
-          console.log("Movie submitted");
-        }}
+        onSubmit={() => console.log("Movie submitted")}
       />
     </SafeAreaView>
   );
@@ -151,11 +161,33 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginVertical: 10,
   },
-  listContainer: {
-    flex: 1,
-    width: "100%",
-  },
   listContent: {
     padding: 10,
+  },
+  scrollContainer: {
+    paddingBottom: 80,
+  },
+  categorySection: {
+    marginBottom: 25,
+    paddingHorizontal: 10,
+  },
+  categoryTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "#222",
+  },
+  horizontalList: {
+    gap: 10,
+  },
+  noMoviesText: {
+    fontSize: 14,
+    color: "#666",
+    paddingHorizontal: 10,
+  },
+  fab: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
   },
 });
